@@ -20,7 +20,7 @@ resources:
 - name: windows-20h2-core-gcs
   type: gcs
   source:
-    bucket: gce-image-archive
+    bucket: artifact-releaser-prod-rtp
     json_key: |
       ((gcs-key.credential))
     regexp: "windows-uefi/windows-server-20h2-dc-core-v([0-9]+).tar.gz"
@@ -940,14 +940,16 @@ jobs:
     file: guest-test-infra/concourse/tasks/generate-version.yaml
   - load_var: publish-version
     file: publish-version/version # produced from generate-version task
-  - task: publish-windows-20h2-core
-    file: guest-test-infra/concourse/tasks/daisy-publish-images.yaml
+  - file: guest-test-infra/concourse/tasks/gcloud-publish-image.yaml
+    task: publish-windows-20h2-core
     vars:
-      source_gcs_path: "gs://gce-image-archive/windows-uefi"
-      source_version: v((.:source-version))
-      publish_version: ((.:publish-version))
+      topic: "projects/artifact-releaser-prod/topics/gcp-guest-image-release-prod"
+      image_name: "windows-20h2-core"
+      gcs_image_path: "gs://artifact-releaser-prod-rtp/windows-uefi"
       wf: "windows/windows-server-20h2-dc-core-uefi.publish.json"
-      environment: "prod"
+      publish_version: ((.:publish-version))
+      source_version: v((.:source-version))
+      release_notes: ""
 # Windows SAC 2004 Core
 - name: publish-to-prod-2004
   plan:
